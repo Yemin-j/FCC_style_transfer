@@ -1,112 +1,156 @@
-# [CVPR 2024 Highlight] Style Injection in Diffusion: A Training-free Approach for Adapting Large-scale Diffusion Models for Style Transfer
+# Standardized False Color Composite (SFCC) Generation for GEMS Wildfire Smoke Imagery  
+### Using StyleID-based Deep Learning Style Transfer
 
-### [Paper](https://openaccess.thecvf.com/content/CVPR2024/html/Chung_Style_Injection_in_Diffusion_A_Training-free_Approach_for_Adapting_Large-scale_CVPR_2024_paper.html) / [Arxiv](https://arxiv.org/abs/2312.09008) / [Project Page](https://jiwoogit.github.io/StyleID_site/)
-![imgs](asset/imgs.png)
+This repository accompanies a research study that applies **StyleID** to  
+**GEMS FCC (False Color Composite)** wildfire smoke imagery to improve  
+visual consistency, tone stability, and smoke plume visibility across time-series satellite data.
+
+The original StyleID code is available at:  
+🔗 https://github.com/jiwoogit/StyleID  
+(Please download `sd-v1-4.ckpt` from the original repository.)
+
+---
+
+## 📌 Research Motivation
+
+Wildfire smoke is a major environmental hazard whose visual properties vary  
+significantly depending on:
+
+- Solar zenith angle (SZA)  
+- Atmospheric scattering  
+- Observation time  
+- Aerosol concentration  
+- Sensor noise  
+
+As shown in the *FCC examples in the uploaded paper (page 8)*,  
+the same wildfire event captured at different times of day  
+shows **severe tone inconsistency**, causing:
+
+- Difficulty in smoke boundary interpretation  
+- Reduced reliability in visual monitoring  
+- Poor generalization for deep learning–based smoke detection  
+- Color variability that disrupts time-series analysis  
+
+To address this, we introduce a **Standardized False Color Composite (SFCC)**  
+using style transfer techniques optimized for scientific satellite imagery.
+
+---
+
+## 🎯 Research Objective
+
+The goal of this repository is **not** to provide a general implementation of StyleID.  
+Instead, this repository documents how StyleID was used in the following scientific task:
+
+> **"Applying deep learning style transfer to standardize the color tone  
+of GEMS wildfire smoke imagery while preserving structural content."**
+
+Specifically, we evaluated whether StyleID can:
+
+1. Reduce tone variability across multi-hour GEMS FCC data  
+2. Preserve smoke plume shape, edge clarity, and fine aerosol structures  
+3. Improve visual interpretability for wildfire monitoring  
+4. Outperform traditional normalization or GAN-based style transfer models  
+
+---
+
+## 🛰️ Dataset: GEMS FCC Wildfire Imagery
+
+As described in the paper (pp. 6–8) :contentReference[oaicite:0]{index=0}:
+
+- Sensor: **GEMS (Geostationary Environment Monitoring Spectrometer)**  
+- Bands used:
+  - **Red:** 380 nm – 340 nm (ΔUV)
+  - **Green:** 380 nm
+  - **Blue:** 340 nm
+- Region: Korean Peninsula  
+- Case studies: Wildfire events from **2022, 2023, 2025**  
+- Purpose: Visualizing UV-absorbing aerosols (smoke) using FCC  
+
+Raw FCC images show strong temporal tone instability (Figure 3 in the paper).
+
+---
+
+## 🧠 Models Compared
+
+This study compared **four tone-standardization methods**:
+
+| Method | Type | Strengths | Weaknesses |
+|--------|------|-----------|------------|
+| **ECDF** | Statistical | Fast, stable | Fails to preserve smoke shape |
+| **ReHistoGAN** | GAN-based | Good color harmonization | Texture breakup, blurred structure |
+| **StyTR-2** | Transformer | Handles global tone | Patch discontinuity, unstable on satellite data |
+| **SI-DM** | Diffusion | Best structure preservation, smooth tone | Slightly lower histogram matching in Red band |
+
+> StyleID (StyTR-2) was included as one of the models tested.  
+> The SI-DM model eventually performed best in satellite imagery context  
+> but StyleID provided meaningful comparison for transformer-based style transfer.
+
+---
+
+## 🔬 Key Findings
+
+### 1. **StyleID improves tone consistency across frames**
+Based on multiple wildfire cases (Figure 7–9 in the paper), StyleID:
+
+- Reduces abrupt color shifts  
+- Harmonizes background tone  
+- Generates smoother temporal transitions  
+
+### 2. **Structural preservation is moderate**
+As shown in close-up comparisons (Figure 5 and 6):
+
+- Smoke boundaries are partially preserved  
+- Some patch-level artifacts remain  
+- Global tone application may override fine aerosol details  
+
+### 3. **Quantitative metrics do not fully reflect visual quality**
+From Table 3 in the paper:
+
+- StyleID shows middle-range SSIM, LPIPS, FID  
+- But satellite smoke structures require domain-specific qualitative evaluation  
+
+### 4. **Overall role of StyleID**
+StyleID served as a powerful baseline for transformer-based color style transfer but  
+was not the best-performing model for smoke imagery (SI-DM ranked highest).  
+
+However, StyleID still:
+
+- Demonstrated strong tone harmonization  
+- Provided stable style transfer without extreme distortions  
+- Helped validate the viability of transformer-based SFCC generation  
+
+---
+
+## 📌 Research Conclusion (Summary)
+
+According to the study conclusions (pp. 22–23) :contentReference[oaicite:1]{index=1}:
+
+- Deep learning style transfer significantly enhances  
+  **tone consistency and smoke visibility** in GEMS FCC imagery.  
+- StyleID helped demonstrate the effectiveness of transformer-based  
+  approaches in preserving global tonal patterns.  
+- The best overall model was SI-DM,  
+  but StyleID was essential in the comparative evaluation.  
+- This work represents the **first systematic application of style transfer  
+  to wildfire smoke visualization in geostationary satellite imagery**.  
+
+---
+
+## 🔗 Acknowledgements
+
+This repository includes code from:
+
+**StyleID: Learning Style Identity for Anime Character Generation**  
+© Original authors — Licensed under **Apache License 2.0**  
+https://github.com/jiwoogit/StyleID
+
+The `sd-v1-4.ckpt` model **is not included**.  
+Please download it from the original repository and place it under:
+
+./models/ldm/stable-diffusion-v1/sd-v1-4.ckpt
 
 
-## Usage
+---
 
-**To run our code, please follow these steps:**
+## 📄 Citation
 
-1. [Setup](#setup)
-2. [Run StyleID](#run-styleid)
-3. [Evaluation](#evaluation)
-
-It may require a single GPU with more than 20GB of memory.
-I tested the code in the [pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel](https://hub.docker.com/layers/pytorch/pytorch/1.8.1-cuda11.1-cudnn8-devel/images/sha256-024af183411f136373a83f9a0e5d1a02fb11acb1b52fdcf4d73601912d0f09b1) Docker image.
-
-#### ** You can also refer to "diffusers_implementation/" for StyleID implementation based on diffusers library. **
-
-## Setup
-
-Our codebase is built on ([CompVis/stable-diffusion](https://github.com/CompVis/stable-diffusion) and [MichalGeyer/plug-and-play](https://github.com/MichalGeyer/plug-and-play))
-and has similar dependencies and model architecture.
-
-### Create a Conda Environment
-
-```
-conda env create -f environment.yaml
-conda activate StyleID
-```
-
-### Download StableDiffusion Weights
-
-Download the StableDiffusion weights from the [CompVis organization at Hugging Face](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
-(download the `sd-v1-4.ckpt` file), and link them:
-```
-ln -s <path/to/model.ckpt> models/ldm/stable-diffusion-v1/model.ckpt 
-```
-
-## Run StyleID
-
-For running StyleID, run:
-
-```
-python run_styleid.py --cnt <content_img_dir> --sty <style_img_dir>
-```
-For running default configuration in sample image files, run:
-```
-python run_styleid.py --cnt data/cnt --sty data/sty --gamma 0.75 --T 1.5  # default
-python run_styleid.py --cnt data/cnt --sty data/sty --gamma 0.3 --T 1.5   # high style fidelity
-```
-
-To fine-tune the parameters, you have control over the following aspects in the style transfer:
-
-- **Attention-based style injection** is removed by the `--without_attn_injection` parameter.
-- **Query preservation** is controlled by the `--gamma` parameter.
-  (A higher value enhances content fidelity but may result a lack of style fidelity).
-- **Attention temperature scaling** is controlled through the `--T` parameter.
-- **Initial latent AdaIN** is removed by the `--without_init_adain` parameter.
-
-### Save Precomputed Inversion Features
-By default, it generates a "precomputed_feats" directory and saves the DDIM inversion feature of each input image.
-This reduces the time for two DDIM inversions but requires a significant amount of storage (over 3 GB for each image).
-If you encounter "no space left" error, please set the "precomputed" parameter as follows:
-
-```
-python run_styleid.py --precomputed "" # not save DDIM inversion features
-```
-
-## Evaluation
-
-For a quantitative evaluation, we incorporate a set of randomly selected inputs from [MS-COCO](https://cocodataset.org) and [WikiArt](https://github.com/cs-chan/ArtGAN/tree/master/WikiArt%20Dataset) in "./data" directory.
-
-
-Before executing evalution code, please duplicate the content and style images to match the number of stylized images first. (40 styles, 20 contents -> 800 style images, 800 content images)
-
-run:
-```
-python util/copy_inputs.py --cnt data/cnt --sty data/sty
-```
-
-We largely employ [matthias-wright/art-fid](https://github.com/matthias-wright/art-fid) and [mahmoudnafifi/HistoGAN](https://github.com/mahmoudnafifi/HistoGAN) for our evaluation.
-
-### Art-fid
-run:
-```
-cd evaluation;
-python eval_artfid.py --sty ../data/sty_eval --cnt ../data/cnt_eval --tar ../output
-```
-
-### Histogram loss
-run:
-```
-cd evaluation;
-python eval_histogan.py --sty ../data/sty_eval --tar ../output
-```
-
-Also, we additionally provide the style and content images for qualitative comparsion, in "./data_vis" directory.
-
-## Citation
-If you find our work useful, please consider citing and star:
-```BibTeX
-
-@InProceedings{Chung_2024_CVPR,
-    author    = {Chung, Jiwoo and Hyun, Sangeek and Heo, Jae-Pil},
-    title     = {Style Injection in Diffusion: A Training-free Approach for Adapting Large-scale Diffusion Models for Style Transfer},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month     = {June},
-    year      = {2024},
-    pages     = {8795-8805}
-}
-```
