@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    
+    "configurations": [
+        
+        {
+            "name": "run_styleid.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./run_styleid.py",
+            "args": [
+                "--cnt", "DD:/gems/phd_student/style_transfer/styleid/test/input/content", 
+                "--sty", "D:/gems/phd_student/style_transfer/styleid/test/input/style",
+                "--H", "256",
+                "--W", "256",
+                "--gamma", "0.3",
+                "--attn_layer", "9,10,11",
+                "--T", "1.5",
+                "--ckpt", "C:/Users/User/PycharmProjects/styleid/StyleID/models/ldm/stable-diffusion-v1/sd-v1-4.ckpt",
+                "--output_path", "D:/gems/phd_student/style_transfer/styleid/test/",
+                "--no_save_feats"
+            ],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "copy_inputs.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "util/copy_inputs.py",
+            "args": [
+                "--cnt", "data/cnt",
+                "--sty", "data/sty",
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "eval_artfid.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluation/eval_artfid.py",
+            "args": [
+                "--cnt", "data/cnt_eval",
+                "--sty", "data/sty_eval",
+                "--tar", "output",
+                "--num_workers", "2",
+            ],
+            "console": "integratedTerminal"
+        },
+                {
+            "name": "eval2.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluation/eval2.py",
+            "console": "integratedTerminal"
+        },
+    ],
+}

@@ -49,6 +49,34 @@ def feat_merge(opt, cnt_feats, sty_feats, start_step=0):
                 feat_maps[i][ori_key] = sty_feat[ori_key]
     return feat_maps
 
+###
+def hybrid_feat_merge(opt, cnt_feats, sty_feats, start_step=0):
+    feat_maps = [{'config': {
+                'gamma': opt.gamma,
+                'T': opt.T,
+                'timestep': _,
+                }} for _ in range(opt.save_feat_steps)]
+
+    for i in range(len(feat_maps)):
+        if i < (opt.save_feat_steps - start_step):
+            continue
+        cnt_feat = cnt_feats[i]
+        sty_feat = sty_feats[i]
+        ori_keys = sty_feat.keys()
+
+        for ori_key in ori_keys:
+            if ori_key[-1] == 'q':
+                # 쿼리는 콘텐츠에서 가져옴 (기존과 동일)
+                feat_maps[i][ori_key] = cnt_feat[ori_key]
+            elif ori_key[-1] == 'k':
+                # 키는 스타일에서 가져옴
+                feat_maps[i][ori_key] = sty_feat[ori_key]
+            elif ori_key[-1] == 'v':
+                # 값은 콘텐츠에서 가져옴 (이 부분이 변경됨)
+                feat_maps[i][ori_key] = cnt_feat[ori_key]
+    return feat_maps
+###
+
 
 def load_img(path):
     image = Image.open(path).convert("RGB")
@@ -111,6 +139,7 @@ def main():
     parser.add_argument('--output_path', type=str, default='output')
     parser.add_argument("--without_init_adain", action='store_true')
     parser.add_argument("--without_attn_injection", action='store_true')
+    parser.add_argument("--no_save_feats", action='store_true', help="Don't save feature maps")
     opt = parser.parse_args()
 
     feat_path_root = opt.precomputed
@@ -124,6 +153,7 @@ def main():
     model_config = OmegaConf.load(f"{opt.model_config}")
     model = load_model_from_config(model_config, f"{opt.ckpt}")
 
+    # DDIM / Time Stemp Initialize
     self_attn_output_block_indices = list(map(int, opt.attn_layer.split(',')))
     ddim_inversion_steps = opt.ddim_inv_steps
     save_feature_timesteps = ddim_steps = opt.save_feat_steps
@@ -143,6 +173,7 @@ def main():
     seed = torch.initial_seed()
     opt.seed = seed
 
+    # Call Back Func
     global feat_maps
     feat_maps = [{'config': {
                 'gamma':opt.gamma,
@@ -182,6 +213,7 @@ def main():
     sty_img_list = sorted(os.listdir(opt.sty))
     cnt_img_list = sorted(os.listdir(opt.cnt))
 
+    # Style Image Process
     begin = time.time()
     for sty_name in sty_img_list:
         sty_name_ = os.path.join(opt.sty, sty_name)
@@ -204,7 +236,7 @@ def main():
             sty_feat = copy.deepcopy(feat_maps)
             sty_z_enc = feat_maps[0]['z_enc']
 
-
+        # Contents Image Process
         for cnt_name in cnt_img_list:
             cnt_name_ = os.path.join(opt.cnt, cnt_name)
             init_cnt = load_img(cnt_name_).to(device)
@@ -225,7 +257,8 @@ def main():
                                                     img_callback=ddim_sampler_callback)
                 cnt_feat = copy.deepcopy(feat_maps)
                 cnt_z_enc = feat_maps[0]['z_enc']
-
+            
+            # Style Image Transfer
             with torch.no_grad():
                 with precision_scope("cuda"):
                     with model.ema_scope():
@@ -238,6 +271,7 @@ def main():
                         else:
                             adain_z_enc = adain(cnt_z_enc, sty_z_enc)
                         feat_maps = feat_merge(opt, cnt_feat, sty_feat, start_step=start_step)
+                        # feat_maps = hybrid_feat_merge(opt, cnt_feat, sty_feat, start_step=start_step)
                         if opt.without_attn_injection:
                             feat_maps = None
 
@@ -260,8 +294,11 @@ def main():
                         x_sample = 255. * rearrange(x_image_torch[0].cpu().numpy(), 'c h w -> h w c')
                         img = Image.fromarray(x_sample.astype(np.uint8))
 
+                        target_size = (256, 256)  # 원하는 크기
+                        img = img.resize(target_size, resample=Image.Resampling.LANCZOS)
+
                         img.save(os.path.join(output_path, output_name))
-                        if len(feat_path_root) > 0:
+                        if len(feat_path_root) > 0 and not opt.no_save_feats:
                             print("Save features")
                             if not os.path.isfile(cnt_feat_name):
                                 with open(cnt_feat_name, 'wb') as h:
